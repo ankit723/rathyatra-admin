@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/lib/useAuth';
+import Image from 'next/image';
 
 // Define sidebar item type for type safety
 export interface SidebarItem {
@@ -174,7 +175,8 @@ const Sidebar = ({ className }: SidebarProps) => {
           {/* Logo */}
           <div className="flex h-16 items-center px-6 border-b">
             <Link href="/dashboard" className="flex items-center gap-2">
-              <span className="font-bold text-lg text-primary">Admin Portal</span>
+              <Image src="/logo.jpeg" alt="Logo" width={50} height={50} />
+              <span className="font-bold text-lg text-primary">Puri Police Admin</span>
             </Link>
           </div>
 
@@ -184,7 +186,7 @@ const Sidebar = ({ className }: SidebarProps) => {
           </nav>
 
           {/* User info */}
-          <div className="border-t p-4">
+          <div className="border-t p-2">
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium">
                 {getInitials()}

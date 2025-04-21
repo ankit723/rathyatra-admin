@@ -4,7 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { getDashboardStats } from '@/lib/dashboardService';
-import { Loader2, Users, ShieldAlert, MapPin, Bell } from 'lucide-react';
+import { Loader2, Users, ShieldAlert, MapPin, Bell, Download, Smartphone, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import QRCode from 'react-qr-code';
 
 const DashboardPage = () => {
   const router = useRouter();
@@ -20,6 +23,22 @@ const DashboardPage = () => {
     }
   });
   const [dataLoading, setDataLoading] = useState(true);
+  const [openAndroidModal, setOpenAndroidModal] = useState(false);
+  const [openIosModal, setOpenIosModal] = useState(false);
+
+  // App download links (pointing to files in the public directory)
+  const androidAppLink = "/apps/rathyatra-app.apk";
+  const iosAppLink = "/apps/rathyatra-app.ipa";
+
+  // Full URLs for QR codes (including domain)
+  const getFullUrl = (path: string) => {
+    // Using window.location in client-side to get the current domain
+    if (typeof window !== 'undefined') {
+      const baseUrl = window.location.origin;
+      return `${baseUrl}${path}`;
+    }
+    return path;
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -38,6 +57,14 @@ const DashboardPage = () => {
       fetchDashboardData();
     }
   }, [admin]);
+
+  const handleAndroidDownload = () => {
+    window.open(androidAppLink, '_blank');
+  };
+
+  const handleIosDownload = () => {
+    window.open(iosAppLink, '_blank');
+  };
 
   if (isLoading) {
     return (
@@ -78,6 +105,74 @@ const DashboardPage = () => {
             <span className="font-medium">Created At:</span>{' '}
             {new Date(admin.createdAt).toLocaleString()}
           </p>
+        </div>
+      </div>
+      
+      {/* App Download Section */}
+      <div className="mt-8 rounded-lg border p-6 shadow-md">
+        <h2 className="mb-4 text-xl font-semibold">App Downloads</h2>
+        <div className="rounded-lg bg-amber-50 p-3 mb-4 flex items-start gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-amber-800">
+            Place the app files <strong>rathyatra-app.apk</strong> and <strong>rathyatra-app.ipa</strong> in the <code>/public/apps/</code> directory for these download links to work.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          <Dialog open={openAndroidModal} onOpenChange={setOpenAndroidModal}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="bg-green-600 hover:bg-green-700">
+                <Smartphone className="mr-2" /> Download Android App
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Download Android App</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="flex h-64 w-64 items-center justify-center p-4 bg-white border">
+                  <QRCode 
+                    value={getFullUrl(androidAppLink)}
+                    size={216}
+                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  />
+                </div>
+                <p className="text-center text-sm text-gray-600">
+                  Scan this QR code with your Android device to download the app
+                </p>
+                <Button onClick={handleAndroidDownload} className="mt-2 w-full">
+                  <Download className="mr-2" /> Direct Download
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={openIosModal} onOpenChange={setOpenIosModal}>
+            <DialogTrigger asChild>
+              <Button variant="default" className="bg-blue-600 hover:bg-blue-700">
+                <Smartphone className="mr-2" /> Download iOS App
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Download iOS App</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center gap-4 py-4">
+                <div className="flex h-64 w-64 items-center justify-center p-4 bg-white border">
+                  <QRCode 
+                    value={getFullUrl(iosAppLink)}
+                    size={216}
+                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  />
+                </div>
+                <p className="text-center text-sm text-gray-600">
+                  Scan this QR code with your iOS device to download the app
+                </p>
+                <Button onClick={handleIosDownload} className="mt-2 w-full">
+                  <Download className="mr-2" /> Direct Download
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
       

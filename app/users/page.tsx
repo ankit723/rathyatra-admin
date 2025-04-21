@@ -202,49 +202,74 @@ export default function UsersPage() {
   const [newLocation, setNewLocation] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
+  const [isResolvingEmergency, setIsResolvingEmergency] = useState(false);
   
   // Define Google Maps typings
   const autocompleteRef = useRef<GoogleMapsAutocomplete>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fetchUsers = async () => {
-    setIsLoading(true);
+  const fetchUsers = async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setIsLoading(true);
+    } else {
+      setIsBackgroundRefreshing(true);
+    }
     setError(null);
     
     try {
       const response = await api.get<{ users: User[] }>('/users');
       setUsers(response.data.users);
-      setFilteredUsers(response.data.users);
+      
+      // Handle filtered users based on current search query
+      if (searchQuery.trim() !== '') {
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        
+        const filtered = response.data.users.filter(user => 
+          user.firstName.toLowerCase().includes(lowerCaseQuery) || 
+          user.lastName.toLowerCase().includes(lowerCaseQuery) || 
+          user.email.toLowerCase().includes(lowerCaseQuery) ||
+          user.rank.toLowerCase().includes(lowerCaseQuery) ||
+          user.phoneNumber.includes(lowerCaseQuery)
+        );
+        
+        setFilteredUsers(filtered);
+      } else {
+        setFilteredUsers(response.data.users);
+      }
     } catch (err: any) {
       console.error('Error fetching users:', err);
-      setError(err.response?.data?.message || 'Failed to load users');
-      toast.error('Failed to load users. Please try again.');
+      if (isInitialLoad) {
+        setError(err.response?.data?.message || 'Failed to load users');
+        toast.error('Failed to load users. Please try again.');
+      } else {
+        // Only show a toast for background refresh failures, don't update the error state
+        toast.error('Background refresh failed. Will retry again shortly.');
+      }
     } finally {
-      setIsLoading(false);
+      if (isInitialLoad) {
+        setIsLoading(false);
+      }
+      setIsBackgroundRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(true);
   }, []);
 
+  // Add auto refresh interval
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredUsers(users);
-    } else {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      
-      const filtered = users.filter(user => 
-        user.firstName.toLowerCase().includes(lowerCaseQuery) || 
-        user.lastName.toLowerCase().includes(lowerCaseQuery) || 
-        user.email.toLowerCase().includes(lowerCaseQuery) ||
-        user.rank.toLowerCase().includes(lowerCaseQuery) ||
-        user.phoneNumber.includes(lowerCaseQuery)
-      );
-      
-      setFilteredUsers(filtered);
-    }
-  }, [searchQuery, users]);
+    const refreshInterval = setInterval(() => {
+      // Only refresh if not already loading or background refreshing
+      if (!isLoading && !isBackgroundRefreshing) {
+        fetchUsers(false);
+      }
+    }, 5000); // Refresh every 15 seconds
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(refreshInterval);
+  }, [isLoading, isBackgroundRefreshing]);
 
   // Function to position the pac-container exactly where it needs to be
   const positionPacContainer = () => {
@@ -400,13 +425,31 @@ export default function UsersPage() {
       
       toast.success('User location updated successfully');
       setLocationDialogOpen(false);
-      fetchUsers(); // Refresh the user list
+      fetchUsers(false); // Refresh the user list
       cleanup(); // Clean up autocomplete after successful update
     } catch (err: any) {
       console.error('Error updating location:', err);
       toast.error('Failed to update location. Please try again.');
     } finally {
       setIsUpdatingLocation(false);
+    }
+  };
+
+  const resolveEmergency = async (userId: string) => {
+    setIsResolvingEmergency(true);
+    
+    try {
+      await api.put(`/users/${userId}/emergency`, { 
+        emergencyAlarm: false
+      });
+      
+      toast.success('Emergency has been resolved');
+      fetchUsers(false); // Refresh the user list
+    } catch (err: any) {
+      console.error('Error resolving emergency:', err);
+      toast.error('Failed to resolve emergency. Please try again.');
+    } finally {
+      setIsResolvingEmergency(false);
     }
   };
 
@@ -490,7 +533,7 @@ export default function UsersPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={fetchUsers}
+            onClick={() => fetchUsers(true)}
             title="Refresh"
           >
             <RefreshCcw className="h-4 w-4" />
@@ -568,7 +611,7 @@ export default function UsersPage() {
               <div className="text-center">
                 <AlertTriangle className="mx-auto h-8 w-8 text-orange-500" />
                 <p className="mt-2 text-sm text-muted-foreground">{error}</p>
-                <Button variant="outline" className="mt-4" onClick={fetchUsers}>
+                <Button variant="outline" className="mt-4" onClick={() => fetchUsers(true)}>
                   Try Again
                 </Button>
               </div>
@@ -659,6 +702,13 @@ export default function UsersPage() {
                               onClick={() => openLocationDialog(user._id, user.assignedLocation)}
                             >
                               Update Location
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => resolveEmergency(user._id)}
+                              disabled={!user.emergencyAlarm || isResolvingEmergency}
+                              className={user.emergencyAlarm ? "text-red-600 focus:text-red-600" : "text-muted-foreground"}
+                            >
+                              {isResolvingEmergency ? 'Resolving...' : 'Emergency Resolved'}
                             </DropdownMenuItem>
                             <Link href={`/users/${user._id}`}>
                               <DropdownMenuItem>View Profile</DropdownMenuItem>

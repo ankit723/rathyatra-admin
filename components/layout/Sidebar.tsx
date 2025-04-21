@@ -174,7 +174,7 @@ const Sidebar = ({ className }: SidebarProps) => {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center px-6 border-b">
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Image src="/logo.jpeg" alt="Logo" width={50} height={50} />
               <span className="font-bold text-lg text-primary">Puri Police Admin</span>
             </Link>

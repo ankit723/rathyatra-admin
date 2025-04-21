@@ -5,8 +5,8 @@ import { Providers } from "./providers";
 import "./globals.css";
 import { Layout } from "@/components/layout";
 import { Toaster } from "@/components/ui/sonner";
-import { useEffect } from "react";
-
+import { useEffect, useState } from "react";
+import SplashScreen from "@/components/layout/splashScreen.";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -24,6 +24,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate a splash screen delay
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 4000); // show for 2 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
   // Global click handler to clean up any stray Google Places suggestions boxes
   useEffect(() => {
     const handleDocumentClick = (e: MouseEvent) => {
@@ -75,10 +86,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
-          <Layout>{children}</Layout>
-          <Toaster position="top-right" />
-        </Providers>
+        {loading ? (
+          <SplashScreen />
+        ) : (
+          <Providers>
+            <Layout>{children}</Layout>
+            <Toaster position="top-right" />
+          </Providers>
+        )}
       </body>
     </html>
   );

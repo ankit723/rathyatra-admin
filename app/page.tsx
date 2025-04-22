@@ -111,12 +111,6 @@ const DashboardPage = () => {
       {/* App Download Section */}
       <div className="mt-8 rounded-lg border p-6 shadow-md">
         <h2 className="mb-4 text-xl font-semibold">App Downloads</h2>
-        <div className="rounded-lg bg-amber-50 p-3 mb-4 flex items-start gap-2">
-          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-amber-800">
-            Place the app files <strong>rathyatra-app.apk</strong> and <strong>rathyatra-app.ipa</strong> in the <code>/public/apps/</code> directory for these download links to work.
-          </p>
-        </div>
         <div className="flex flex-wrap gap-4">
           <Dialog open={openAndroidModal} onOpenChange={setOpenAndroidModal}>
             <DialogTrigger asChild>

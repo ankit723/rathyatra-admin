@@ -21,7 +21,6 @@ interface User {
   _id: string;
   firstName: string;
   lastName: string;
-  email: string;
   rank: string;
   permanentAddress: string;
   currentAddress: string;
@@ -58,11 +57,12 @@ export default function EditUserPage() {
       setFormData({
         firstName: response.data.user.firstName,
         lastName: response.data.user.lastName,
-        email: response.data.user.email,
         rank: response.data.user.rank,
         permanentAddress: response.data.user.permanentAddress,
         currentAddress: response.data.user.currentAddress,
-        phoneNumber: response.data.user.phoneNumber,
+        phoneNumber: response.data.user.phoneNumber?.startsWith('+91') 
+          ? response.data.user.phoneNumber.substring(3) 
+          : response.data.user.phoneNumber,
         assignedLocation: response.data.user.assignedLocation,
         age: response.data.user.age,
         sex: response.data.user.sex,
@@ -97,18 +97,12 @@ export default function EditUserPage() {
 
   const validateForm = (): boolean => {
     // Required fields validation
-    const requiredFields = ['firstName', 'lastName', 'email', 'rank', 'phoneNumber'];
+    const requiredFields = ['firstName', 'lastName', 'rank', 'phoneNumber'];
     for (const field of requiredFields) {
       if (!formData[field as keyof User]) {
         toast.error(`${field.replace(/([A-Z])/g, ' $1').trim()} is required`);
         return false;
       }
-    }
-
-    // Email validation
-    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error('Please enter a valid email address');
-      return false;
     }
 
     return true;
@@ -290,17 +284,6 @@ export default function EditUserPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email || ''}
-                  onChange={handleInputChange}
-                  placeholder="john.doe@example.com"
-                />
-              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="rank">Rank *</Label>

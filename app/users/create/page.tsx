@@ -20,7 +20,6 @@ import {
 interface UserFormData {
   firstName: string;
   lastName: string;
-  email: string;
   password: string;
   rank: string;
   permanentAddress: string;
@@ -43,7 +42,6 @@ export default function CreateUserPage() {
   const [formData, setFormData] = useState<UserFormData>({
     firstName: '',
     lastName: '',
-    email: '',
     password: '',
     rank: 'Inspector',
     permanentAddress: '',
@@ -71,18 +69,12 @@ export default function CreateUserPage() {
 
   const validateForm = (): boolean => {
     // Required fields validation
-    const requiredFields: (keyof UserFormData)[] = ['firstName', 'lastName', 'email', 'password', 'rank', 'phoneNumber'];
+    const requiredFields: (keyof UserFormData)[] = ['firstName', 'lastName', 'password', 'rank', 'phoneNumber'];
     for (const field of requiredFields) {
       if (!formData[field]) {
         toast.error(`${field.replace(/([A-Z])/g, ' $1').trim()} is required`);
         return false;
       }
-    }
-
-    // Email validation
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      toast.error('Please enter a valid email address');
-      return false;
     }
 
     // Password validation (min 6 chars)
@@ -246,17 +238,6 @@ export default function CreateUserPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="john.doe@example.com"
-                />
-              </div>
               
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>

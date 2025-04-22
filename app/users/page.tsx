@@ -85,7 +85,6 @@ interface User {
   _id: string;
   firstName: string;
   lastName: string;
-  email: string;
   rank: string;
   phoneNumber: string;
   currentLocation: string;
@@ -204,6 +203,12 @@ export default function UsersPage() {
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   const [isResolvingEmergency, setIsResolvingEmergency] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [selectedUserName, setSelectedUserName] = useState('');
   
   // Define Google Maps typings
   const autocompleteRef = useRef<GoogleMapsAutocomplete>(null);
@@ -228,7 +233,6 @@ export default function UsersPage() {
         const filtered = response.data.users.filter(user => 
           user.firstName.toLowerCase().includes(lowerCaseQuery) || 
           user.lastName.toLowerCase().includes(lowerCaseQuery) || 
-          user.email.toLowerCase().includes(lowerCaseQuery) ||
           user.rank.toLowerCase().includes(lowerCaseQuery) ||
           user.phoneNumber.includes(lowerCaseQuery)
         );
@@ -396,6 +400,19 @@ export default function UsersPage() {
     setLocationDialogOpen(true);
   };
 
+  const openDeleteDialog = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setDeleteDialogOpen(true);
+  };
+
+  const openPasswordDialog = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setNewPassword('');
+    setPasswordDialogOpen(true);
+  };
+
   const updateUserLocation = async () => {
     // Add cleanup function to remove any leftover suggestions
     const cleanup = () => {
@@ -450,6 +467,49 @@ export default function UsersPage() {
       toast.error('Failed to resolve emergency. Please try again.');
     } finally {
       setIsResolvingEmergency(false);
+    }
+  };
+
+  const deleteUser = async () => {
+    if (!selectedUserId) return;
+    
+    setIsDeletingUser(true);
+    
+    try {
+      await api.delete(`/users/${selectedUserId}`);
+      
+      toast.success('User deleted successfully');
+      setDeleteDialogOpen(false);
+      fetchUsers(true); // Refresh the user list
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      toast.error('Failed to delete user. Please try again.');
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
+  const updateUserPassword = async () => {
+    if (!newPassword.trim()) {
+      toast.error('Please enter a new password');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    
+    try {
+      await api.put(`/users/${selectedUserId}/password`, { 
+        password: newPassword
+      });
+      
+      toast.success('User password updated successfully');
+      setPasswordDialogOpen(false);
+      setNewPassword('');
+    } catch (err: any) {
+      console.error('Error updating password:', err);
+      toast.error('Failed to update password. Please try again.');
+    } finally {
+      setIsUpdatingPassword(false);
     }
   };
 
@@ -644,7 +704,7 @@ export default function UsersPage() {
                       <td className="py-3 pl-4">
                         <div>
                           <p className="font-medium">{getFullName(user)}</p>
-                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                          <p className="text-xs text-muted-foreground">{user.phoneNumber}</p>
                         </div>
                       </td>
                       <td className="py-3">
@@ -710,12 +770,24 @@ export default function UsersPage() {
                             >
                               {isResolvingEmergency ? 'Resolving...' : 'Emergency Resolved'}
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => openPasswordDialog(user._id, getFullName(user))}
+                            >
+                              Reset Password
+                            </DropdownMenuItem>
                             <Link href={`/users/${user._id}`}>
                               <DropdownMenuItem>View Profile</DropdownMenuItem>
                             </Link>
                             <Link href={`/users/${user._id}/edit`}>
                               <DropdownMenuItem>Edit User</DropdownMenuItem>
                             </Link>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => openDeleteDialog(user._id, getFullName(user))}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              Delete User
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -809,6 +881,80 @@ export default function UsersPage() {
               disabled={isUpdatingLocation}
             >
               {isUpdatingLocation ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedUserName}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeletingUser}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={deleteUser}
+              disabled={isDeletingUser}
+            >
+              {isDeletingUser ? 'Deleting...' : 'Delete User'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog
+        open={passwordDialogOpen}
+        onOpenChange={setPasswordDialogOpen}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Set a new password for {selectedUserName}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPasswordDialogOpen(false)}
+              disabled={isUpdatingPassword}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={updateUserPassword}
+              disabled={isUpdatingPassword}
+            >
+              {isUpdatingPassword ? 'Updating...' : 'Update Password'}
             </Button>
           </DialogFooter>
         </DialogContent>

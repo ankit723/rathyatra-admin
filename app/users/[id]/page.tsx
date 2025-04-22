@@ -41,7 +41,6 @@ interface User {
   _id: string;
   firstName: string;
   lastName: string;
-  email: string;
   rank: string;
   phoneNumber: string;
   currentLocation: string;
@@ -349,12 +348,6 @@ export default function UserProfilePage() {
               <div>
                 <p className="text-sm font-medium">Rank</p>
                 <p className="text-sm text-muted-foreground">{user.rank}</p>
-              </div>
-
-              <Mail className="text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Email</p>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
 
               <Phone className="text-muted-foreground" />

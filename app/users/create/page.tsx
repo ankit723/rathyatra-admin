@@ -113,6 +113,8 @@ export default function CreateUserPage() {
       // Prepare data for API
       const userData = {
         ...formData,
+        // Ensure phone number has +91 prefix
+        phoneNumber: formData.phoneNumber.startsWith('+91') ? formData.phoneNumber : `+91${formData.phoneNumber}`,
         age: formData.age ? parseInt(formData.age) : undefined
       };
       
@@ -331,13 +333,19 @@ export default function CreateUserPage() {
             
             <div className="space-y-2">
               <Label htmlFor="phoneNumber">Phone Number *</Label>
-              <Input
-                id="phoneNumber"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleInputChange}
-                placeholder="+1 (555) 123-4567"
-              />
+              <div className="flex">
+                <div className="flex items-center justify-center px-3 border border-r-0 border-input rounded-l-md bg-muted text-muted-foreground">
+                  +91
+                </div>
+                <Input
+                  id="phoneNumber"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleInputChange}
+                  placeholder="9876543210"
+                  className="rounded-l-none"
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">

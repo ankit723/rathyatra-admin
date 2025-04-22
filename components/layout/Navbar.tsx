@@ -12,6 +12,7 @@ import {
 import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { usePathname } from 'next/navigation';
+import TestSoundButton from '@/components/TestSoundButton';
 
 interface NavbarProps {
   className?: string;
@@ -50,8 +51,8 @@ const Navbar = ({ className }: NavbarProps) => {
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1 md:gap-2">
-
+        <div className="flex items-center gap-2">
+          <TestSoundButton />
           <Button 
             variant="ghost" 
             size="icon" 

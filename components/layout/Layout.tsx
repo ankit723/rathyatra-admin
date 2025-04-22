@@ -6,6 +6,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import EmergencyNotification from '@/components/EmergencyNotification';
 
 interface LayoutProps {
   children: ReactNode;
@@ -29,6 +30,9 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="flex h-screen bg-slate-50">
+      {/* Emergency Notification System */}
+      <EmergencyNotification />
+      
       {/* Sidebar */}
       <Sidebar />
       

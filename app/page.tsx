@@ -27,18 +27,8 @@ const DashboardPage = () => {
   const [openIosModal, setOpenIosModal] = useState(false);
 
   // App download links (pointing to files in the public directory)
-  const androidAppLink = "/apps/rathyatra-app.apk";
-  const iosAppLink = "/apps/rathyatra-app.ipa";
-
-  // Full URLs for QR codes (including domain)
-  const getFullUrl = (path: string) => {
-    // Using window.location in client-side to get the current domain
-    if (typeof window !== 'undefined') {
-      const baseUrl = window.location.origin;
-      return `${baseUrl}${path}`;
-    }
-    return path;
-  };
+  const androidAppLink = process.env.NEXT_PUBLIC_ANDROID_APP_LINK || '';
+  const iosAppLink = process.env.NEXT_PUBLIC_IOS_APP_LINK || '';
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -125,7 +115,7 @@ const DashboardPage = () => {
               <div className="flex flex-col items-center gap-4 py-4">
                 <div className="flex h-64 w-64 items-center justify-center p-4 bg-white border">
                   <QRCode 
-                    value={getFullUrl(androidAppLink)}
+                    value={androidAppLink}
                     size={216}
                     style={{ height: "auto", maxWidth: "100%", width: "100%" }}
                   />
@@ -153,7 +143,7 @@ const DashboardPage = () => {
               <div className="flex flex-col items-center gap-4 py-4">
                 <div className="flex h-64 w-64 items-center justify-center p-4 bg-white border">
                   <QRCode 
-                    value={getFullUrl(iosAppLink)}
+                    value={iosAppLink}
                     size={216}
                     style={{ height: "auto", maxWidth: "100%", width: "100%" }}
                   />

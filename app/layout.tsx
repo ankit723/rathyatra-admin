@@ -7,6 +7,7 @@ import { Layout } from "@/components/layout";
 import { Toaster } from "@/components/ui/sonner";
 import { useEffect, useState } from "react";
 import SplashScreen from "@/components/layout/splashScreen.";
+import SoundManager from "@/lib/SoundManager";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -90,6 +91,7 @@ export default function RootLayout({
           <SplashScreen />
         ) : (
           <Providers>
+            <SoundManager />
             <Layout>{children}</Layout>
             <Toaster position="top-right" />
           </Providers>

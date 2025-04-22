@@ -19,7 +19,10 @@ import {
   MapPin,
   AlertTriangle,
   Check,
-  X
+  X,
+  Bell,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/axios';
@@ -49,6 +52,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
+import { useEmergency } from '@/contexts/EmergencyContext';
 
 // Google Maps types
 declare global {
@@ -202,7 +206,6 @@ export default function UsersPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
   const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
-  const [isResolvingEmergency, setIsResolvingEmergency] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
@@ -210,9 +213,28 @@ export default function UsersPage() {
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [selectedUserName, setSelectedUserName] = useState('');
   
+  // Get emergency context
+  const { emergencyUsers, setEmergencySidebarOpen, resolveEmergency, refreshEmergencies } = useEmergency();
+  
   // Define Google Maps typings
   const autocompleteRef = useRef<GoogleMapsAutocomplete>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Create audio element on client side only
+  useEffect(() => {
+    // Create audio element on client side
+    audioRef.current = new Audio('/sounds/emergency-alert.mp3');
+    audioRef.current.volume = 0.7;
+    
+    // Cleanup function
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const fetchUsers = async (isInitialLoad = false) => {
     if (isInitialLoad) {
@@ -225,6 +247,9 @@ export default function UsersPage() {
     try {
       const response = await api.get<{ users: User[] }>('/users');
       setUsers(response.data.users);
+      
+      // Also refresh emergency data
+      refreshEmergencies();
       
       // Handle filtered users based on current search query
       if (searchQuery.trim() !== '') {
@@ -452,24 +477,6 @@ export default function UsersPage() {
     }
   };
 
-  const resolveEmergency = async (userId: string) => {
-    setIsResolvingEmergency(true);
-    
-    try {
-      await api.put(`/users/${userId}/emergency`, { 
-        emergencyAlarm: false
-      });
-      
-      toast.success('Emergency has been resolved');
-      fetchUsers(false); // Refresh the user list
-    } catch (err: any) {
-      console.error('Error resolving emergency:', err);
-      toast.error('Failed to resolve emergency. Please try again.');
-    } finally {
-      setIsResolvingEmergency(false);
-    }
-  };
-
   const deleteUser = async () => {
     if (!selectedUserId) return;
     
@@ -584,6 +591,9 @@ export default function UsersPage() {
       {/* Add global styles for Google Places */}
       <GlobalStyles />
       
+      {/* Audio elements for notifications */}
+      <audio id="emergency-sound" src="/sounds/emergency-alert.mp3" preload="auto" />
+      
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-bold">Users</h2>
@@ -598,6 +608,20 @@ export default function UsersPage() {
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>
+          {emergencyUsers.length > 0 && (
+            <Button 
+              variant="destructive" 
+              size="icon" 
+              onClick={() => setEmergencySidebarOpen(true)}
+              className="relative"
+              title="Emergency Alerts"
+            >
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-white text-xs font-medium text-red-600">
+                {emergencyUsers.length}
+              </span>
+              <Bell className="h-4 w-4" />
+            </Button>
+          )}
           <Link href="/users/create">
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
@@ -765,10 +789,9 @@ export default function UsersPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => resolveEmergency(user._id)}
-                              disabled={!user.emergencyAlarm || isResolvingEmergency}
                               className={user.emergencyAlarm ? "text-red-600 focus:text-red-600" : "text-muted-foreground"}
                             >
-                              {isResolvingEmergency ? 'Resolving...' : 'Emergency Resolved'}
+                              {user.emergencyAlarm ? 'Emergency Resolved' : 'Emergency'}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => openPasswordDialog(user._id, getFullName(user))}

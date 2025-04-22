@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import ProtectedRoute from '@/lib/authMiddleware';
 import { Toaster } from '@/components/ui/sonner';
+import { EmergencyProvider } from '@/contexts/EmergencyContext';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -11,8 +12,9 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <ProtectedRoute>
-      {children}
-      <Toaster />
+      <EmergencyProvider>
+        {children}
+      </EmergencyProvider>
     </ProtectedRoute>
   );
 } 

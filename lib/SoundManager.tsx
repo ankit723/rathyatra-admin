@@ -31,7 +31,7 @@ const SoundManager = () => {
           } catch (e) {
             console.warn('SoundManager: Could not remove element:', e);
           }
-          window._emergencyAudioElement = null;
+          window._emergencyAudioElement = undefined;
         }
         
         console.log('SoundManager: Creating fresh emergency audio element');

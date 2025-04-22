@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import { getDashboardStats } from '@/lib/dashboardService';
-import { Loader2, Users, ShieldAlert, MapPin, Bell, Download, Smartphone, AlertCircle } from 'lucide-react';
+import { Loader2, Users, ShieldAlert, MapPin, Bell, Download, Smartphone, AlertCircle, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import QRCode from 'react-qr-code';
@@ -25,6 +25,8 @@ const DashboardPage = () => {
   const [dataLoading, setDataLoading] = useState(true);
   const [openAndroidModal, setOpenAndroidModal] = useState(false);
   const [openIosModal, setOpenIosModal] = useState(false);
+  const [androidCopied, setAndroidCopied] = useState(false);
+  const [iosCopied, setIosCopied] = useState(false);
 
   // App download links (pointing to files in the public directory)
   const androidAppLink = process.env.NEXT_PUBLIC_ANDROID_APP_LINK || '';
@@ -54,6 +56,17 @@ const DashboardPage = () => {
 
   const handleIosDownload = () => {
     window.open(iosAppLink, '_blank');
+  };
+
+  const copyToClipboard = (text: string, setCopied: React.Dispatch<React.SetStateAction<boolean>>) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+      });
   };
 
   if (isLoading) {
@@ -123,9 +136,22 @@ const DashboardPage = () => {
                 <p className="text-center text-sm text-gray-600">
                   Scan this QR code with your Android device to download the app
                 </p>
-                <Button onClick={handleAndroidDownload} className="mt-2 w-full">
-                  <Download className="mr-2" /> Direct Download
-                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button onClick={handleAndroidDownload} className="flex-1">
+                    <Download className="mr-2" /> Direct Download
+                  </Button>
+                  <Button 
+                    onClick={() => copyToClipboard(androidAppLink, setAndroidCopied)} 
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    {androidCopied ? (
+                      <><Check className="mr-2" size={16} /> Copied</>
+                    ) : (
+                      <><Copy className="mr-2" size={16} /> Copy URL</>
+                    )}
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
@@ -151,9 +177,22 @@ const DashboardPage = () => {
                 <p className="text-center text-sm text-gray-600">
                   Scan this QR code with your iOS device to download the app
                 </p>
-                <Button onClick={handleIosDownload} className="mt-2 w-full">
-                  <Download className="mr-2" /> Direct Download
-                </Button>
+                <div className="flex gap-2 w-full">
+                  <Button onClick={handleIosDownload} className="flex-1">
+                    <Download className="mr-2" /> Direct Download
+                  </Button>
+                  <Button 
+                    onClick={() => copyToClipboard(iosAppLink, setIosCopied)} 
+                    variant="outline" 
+                    className="flex-1"
+                  >
+                    {iosCopied ? (
+                      <><Check className="mr-2" size={16} /> Copied</>
+                    ) : (
+                      <><Copy className="mr-2" size={16} /> Copy URL</>
+                    )}
+                  </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>

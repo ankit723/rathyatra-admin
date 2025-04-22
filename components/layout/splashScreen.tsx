@@ -10,6 +10,9 @@ interface Particle {
   size: number;
   duration: number;
   delay: number;
+  movePattern: number; // Add movement pattern property
+  type: string; // 'circle', 'star', or 'dot'
+  color: string; // CSS color class
 }
 
 const SplashScreen = () => {
@@ -18,23 +21,86 @@ const SplashScreen = () => {
 
   // Generate random particles on component mount
   useEffect(() => {
-    const newParticles = Array.from({ length: 15 }, () => ({
+    const particleTypes = ['circle', 'star', 'dot'];
+    const colorClasses = ['bg-white', 'bg-violet-300', 'bg-pink-200', 'bg-indigo-200', 'bg-yellow-100'];
+    
+    const newParticles = Array.from({ length: 70 }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
+      size: Math.random() * 6 + 2,
       duration: Math.random() * 20 + 10,
       delay: Math.random() * 5,
+      movePattern: Math.floor(Math.random() * 3),
+      type: particleTypes[Math.floor(Math.random() * particleTypes.length)],
+      color: colorClasses[Math.floor(Math.random() * colorClasses.length)]
     }));
+    
     setParticles(newParticles);
   }, []);
+
+  // Function to get animation based on movement pattern
+  const getParticleAnimation = (pattern: number) => {
+    switch(pattern) {
+      case 0:
+        return { 
+          y: [0, -30, 0],
+          opacity: [0, 0.9, 0]
+        }; // Simple up and down
+      case 1: 
+        return { 
+          y: [0, -20, 0],
+          x: [0, 15, 0, -15, 0],
+          opacity: [0, 0.8, 0.6, 0.8, 0]
+        }; // Wavy pattern
+      case 2:
+        return { 
+          y: [0, -25, -10, -30, 0],
+          rotate: [0, 45, 0, -45, 0],
+          opacity: [0, 0.9, 0.7, 0.9, 0]
+        }; // Complex pattern with rotation
+      default:
+        return { 
+          y: [0, -30, 0],
+          opacity: [0, 0.9, 0]
+        };
+    }
+  };
+
+  // Function to render different particle shapes
+  const renderParticleShape = (type: string, color: string, size: number) => {
+    switch(type) {
+      case 'star':
+        return (
+          <div className={`${color} transform rotate-45`} style={{
+            clipPath: 'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)',
+            width: `${size * 1.5}px`, 
+            height: `${size * 1.5}px`
+          }}></div>
+        );
+      case 'circle':
+        return <div className={`${color} rounded-full w-full h-full`}></div>;
+      case 'dot':
+      default:
+        return <div className={`${color} rounded-full w-full h-full`}></div>;
+    }
+  };
 
   return (
     <div className="h-screen w-screen relative overflow-hidden">
       {/* Background with enhanced gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-violet-900 via-violet-700 to-indigo-900" />
       
-      {/* Animated background mesh grid */}
-      <div className="absolute inset-0 bg-[url('/mesh-grid.png')] bg-repeat opacity-5" />
+      {/* CSS-based mesh grid instead of image */}
+      <div 
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), 
+                            radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+          backgroundSize: '20px 20px, 50px 50px',
+          backgroundPosition: '0 0, 10px 10px',
+          opacity: 0.2
+        }}
+      />
       
       {/* Animated radial pulse */}
       <div className="absolute inset-0 flex items-center justify-center">
@@ -51,30 +117,6 @@ const SplashScreen = () => {
           }}
         />
       </div>
-      
-      {/* Floating particles */}
-      {particles.map((particle, index) => (
-        <motion.div 
-          key={index}
-          className="absolute rounded-full bg-white"
-          style={{
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-          }}
-          animate={{
-            y: [0, -30, 0],
-            opacity: [0, 0.7, 0],
-          }}
-          transition={{
-            duration: particle.duration,
-            repeat: Infinity,
-            delay: particle.delay,
-            ease: "easeInOut"
-          }}
-        />
-      ))}
       
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden">
@@ -100,22 +142,41 @@ const SplashScreen = () => {
         
         {/* Animated geometric shapes */}
         <motion.div
-          className="absolute bottom-1/4 right-1/4 w-24 h-24 rotate-45 bg-gradient-to-tr from-indigo-500/20 to-transparent backdrop-blur-sm"
+          className="absolute bottom-1/4 right-1/4 w-24 h-24 rotate-45 bg-gradient-to-tr from-indigo-500/40 to-transparent backdrop-blur-sm"
           animate={{
             rotate: [45, 225, 45],
             scale: [1, 1.2, 1],
-            opacity: [0.2, 0.3, 0.2],
+            opacity: [0.4, 0.6, 0.4],
           }}
           transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            boxShadow: '0 0 15px 3px rgba(99, 102, 241, 0.3)'
+          }}
         />
         
         <motion.div
-          className="absolute top-1/3 right-1/4 w-16 h-16 rotate-12 border-2 border-white/10 rounded-lg backdrop-blur-sm"
+          className="absolute top-1/3 right-1/4 w-16 h-16 rotate-12 border-2 border-white/20 rounded-lg backdrop-blur-sm"
           animate={{
             rotate: [12, 372],
-            opacity: [0.1, 0.2, 0.1],
+            opacity: [0.3, 0.5, 0.3],
           }}
           transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            boxShadow: '0 0 10px 2px rgba(255, 255, 255, 0.2)'
+          }}
+        />
+        
+        {/* Additional geometric shape */}
+        <motion.div
+          className="absolute top-2/3 left-1/3 w-20 h-20 rounded-full bg-gradient-to-b from-pink-500/30 to-transparent backdrop-blur-sm"
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          style={{
+            boxShadow: '0 0 15px 5px rgba(236, 72, 153, 0.2)'
+          }}
         />
       </div>
 
@@ -133,6 +194,35 @@ const SplashScreen = () => {
           ease: "easeInOut"
         }}
       />
+
+      {/* Floating particles - placed after content to ensure they appear on top */}
+      {particles.map((particle, index) => (
+        <motion.div 
+          key={index}
+          className="absolute"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            boxShadow: particle.type === 'star' 
+              ? '0 0 5px 2px rgba(255, 255, 255, 0.7)' 
+              : particle.type === 'circle' 
+                ? '0 0 4px 1px rgba(255, 255, 255, 0.6)'
+                : '0 0 3px 1px rgba(255, 255, 255, 0.5)',
+            zIndex: 50
+          }}
+          animate={getParticleAnimation(particle.movePattern)}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+            ease: "easeInOut"
+          }}
+        >
+          {renderParticleShape(particle.type, particle.color, particle.size)}
+        </motion.div>
+      ))}
 
       {/* Content Container */}
       <div className="h-full w-full flex items-center justify-center flex-col text-white relative z-10">

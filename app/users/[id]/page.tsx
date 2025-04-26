@@ -16,7 +16,8 @@ import {
   Edit,
   Check,
   X,
-  Loader2
+  Loader2,
+  Circle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ interface User {
   currentLocation: string;
   assignedLocation: string;
   atAssignedLocation: boolean;
+  assignedGeoFenceRadius: number;
   emergencyAlarm: boolean;
   createdAt: string;
   updatedAt: string;
@@ -377,7 +379,12 @@ export default function UserProfilePage() {
             <CardDescription>User location tracking and assignments</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-[24px_1fr] items-start gap-x-4 gap-y-3">
+            <div className="grid grid-cols-[24px_1fr] items-center gap-x-4 gap-y-3">
+              <Circle className="text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Assigned Geo Fence Radius</p>
+                <p className="text-sm text-muted-foreground">{user.assignedGeoFenceRadius} meters</p>
+              </div>
               <MapPin className="text-muted-foreground" />
               <div>
                 <div className="flex items-center justify-between">

@@ -27,6 +27,7 @@ interface User {
   phoneNumber: string;
   currentLocation: string;
   assignedLocation: string;
+  assignedGeoFenceRadius: number;
   age: number;
   sex: string;
 }
@@ -64,6 +65,7 @@ export default function EditUserPage() {
           ? response.data.user.phoneNumber.substring(3) 
           : response.data.user.phoneNumber,
         assignedLocation: response.data.user.assignedLocation,
+        assignedGeoFenceRadius: response.data.user.assignedGeoFenceRadius,
         age: response.data.user.age,
         sex: response.data.user.sex,
       });
@@ -134,6 +136,12 @@ export default function EditUserPage() {
       if (formData.assignedLocation) {
         await api.put(`/users/${userId}/assigned-location`, { 
           assignedLocation: formData.assignedLocation 
+        });
+      }
+
+      if (formData.assignedGeoFenceRadius) {
+        await api.put(`/users/${userId}/assigned-geo-fence-radius`, { 
+          assignedGeoFenceRadius: formData.assignedGeoFenceRadius 
         });
       }
       
@@ -285,7 +293,7 @@ export default function EditUserPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               
-              <div className="space-y-2">
+              <div className="space-y-2 w-full">
                 <Label htmlFor="rank">Rank *</Label>
                 <Select
                   value={formData.rank || 'Inspector'}
@@ -294,7 +302,7 @@ export default function EditUserPage() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select rank" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-full">
                     <SelectItem value="Director General of Police (DGP)">Director General of Police (DGP)</SelectItem>
                     <SelectItem value="Additional Director General of Police (ADGP)">Additional Director General of Police (ADGP)</SelectItem>
                     <SelectItem value="Inspector General of Police (IGP)">Inspector General of Police (IGP)</SelectItem>
@@ -311,6 +319,20 @@ export default function EditUserPage() {
                     <SelectItem value="Constable">Constable</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2 w-full">
+                <Label htmlFor="assignedGeoFenceRadius">Assigned Geo Fence Radius</Label>
+                <Input
+                  id="assignedGeoFenceRadius"
+                  name="assignedGeoFenceRadius"
+                  type="number"
+                  min="1"
+                  value={formData.assignedGeoFenceRadius || ''}
+                  onChange={handleInputChange}
+                  placeholder="200"
+                />
+                <p className="text-muted-foreground">Radius in meters</p>
               </div>
             </div>
 

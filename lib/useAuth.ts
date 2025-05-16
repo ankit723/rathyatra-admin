@@ -11,7 +11,8 @@ import {
   logoutAdmin as logout,
   getAdminData,
   isAuthenticated,
-  checkAuthStatus
+  checkAuthStatus,
+  validateAdmin
 } from './auth';
 
 interface UseAuthReturn {
@@ -34,14 +35,26 @@ export function useAuth(): UseAuthReturn {
     setIsLoading(true);
     
     try {
+      // First check if we have a token
       const isAuthed = await checkAuthStatus();
-      setIsAuthed(isAuthed);
       
       if (isAuthed) {
-        const adminData = getAdminData();
-        setAdmin(adminData);
+        // Validate that the admin account still exists in database
+        const isValid = await validateAdmin();
+        
+        if (isValid) {
+          const adminData = getAdminData();
+          setAdmin(adminData);
+          setIsAuthed(true);
+        } else {
+          // Admin account no longer exists or token is invalid
+          setAdmin(null);
+          setIsAuthed(false);
+          router.push('/login');
+        }
       } else {
         setAdmin(null);
+        setIsAuthed(false);
       }
     } catch (error) {
       console.error('Auth check error:', error);
@@ -50,7 +63,7 @@ export function useAuth(): UseAuthReturn {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // Initial load
   useEffect(() => {

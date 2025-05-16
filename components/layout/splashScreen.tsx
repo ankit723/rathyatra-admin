@@ -22,7 +22,7 @@ const SplashScreen = () => {
   // Generate random particles on component mount
   useEffect(() => {
     const particleTypes = ['circle', 'star', 'dot'];
-    const colorClasses = ['bg-white', 'bg-violet-300', 'bg-pink-200', 'bg-indigo-200', 'bg-yellow-100'];
+    const colorClasses = ['bg-white', 'bg-orange-300', 'bg-amber-200', 'bg-yellow-200', 'bg-indigo-100'];
     
     const newParticles = Array.from({ length: 70 }, () => ({
       x: Math.random() * 100,
@@ -88,7 +88,7 @@ const SplashScreen = () => {
   return (
     <div className="h-screen w-screen relative overflow-hidden">
       {/* Background with enhanced gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-900 via-violet-700 to-indigo-900" />
+      <div className="absolute inset-0 bg-gradient-to-br from-orange-900 via-amber-700 to-yellow-900" />
       
       {/* CSS-based mesh grid instead of image */}
       <div 

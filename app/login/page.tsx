@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, FormEvent, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/useAuth';
 import Link from 'next/link';
 import { Toaster } from '@/components/ui/sonner';
@@ -17,16 +17,42 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const { login, isLoading } = useAuth();
 
+  // Check for auth error params
+  useEffect(() => {
+    const error = searchParams.get('error');
+    
+    if (error) {
+      switch (error) {
+        case 'admin_deleted':
+          setAuthError('Your admin account has been deleted. Please contact another administrator.');
+          break;
+        case 'session_expired':
+          setAuthError('Your session has expired. Please log in again.');
+          break;
+        case 'auth_error':
+          setAuthError('Authentication error. Please log in again.');
+          break;
+        default:
+          setAuthError('There was a problem with your authentication. Please log in again.');
+      }
+    }
+  }, [searchParams]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
 
     try {
       await login({ email, password });
@@ -34,7 +60,7 @@ const LoginPage = () => {
       router.push('/');
     } catch (err: any) {
       console.error('Login error:', err);
-      toast.error(err.response?.data?.message || 'Failed to login. Please try again.');
+      setAuthError(err.response?.data?.message || 'Failed to login. Please try again.');
     }
   };
 
@@ -45,6 +71,14 @@ const LoginPage = () => {
           <h1 className="text-3xl font-bold text-slate-800">Admin Portal</h1>
           <p className="text-slate-600 mt-2">Manage your application with ease</p>
         </div>
+        
+        {authError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>{authError}</AlertDescription>
+          </Alert>
+        )}
         
         <Card className="border-none shadow-xl bg-white/80 backdrop-blur-sm">
           <CardHeader className="space-y-1">

@@ -22,7 +22,8 @@ import {
   X,
   Bell,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  MessageSquare
 } from 'lucide-react';
 import Link from 'next/link';
 import { api } from '@/lib/axios';
@@ -53,6 +54,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { useEmergency } from '@/contexts/EmergencyContext';
+import MessageDialog from '@/components/MessageDialog';
 
 // Google Maps types
 declare global {
@@ -212,6 +214,15 @@ export default function UsersPage() {
   const [newPassword, setNewPassword] = useState('');
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [selectedUserName, setSelectedUserName] = useState('');
+  
+  // New states for location search
+  const [locationSearchOpen, setLocationSearchOpen] = useState(false);
+  const [locationSearchQuery, setLocationSearchQuery] = useState('');
+  const [isSearchingByLocation, setIsSearchingByLocation] = useState(false);
+  const [locationSearchResults, setLocationSearchResults] = useState<(User & { distance?: number })[]>([]);
+  const [searchedLocation, setSearchedLocation] = useState('');
+  const locationSearchInputRef = useRef<HTMLInputElement>(null);
+  const locationAutocompleteRef = useRef<GoogleMapsAutocomplete>(null);
   
   // Get emergency context
   const { emergencyUsers, setEmergencySidebarOpen, resolveEmergency, refreshEmergencies } = useEmergency();
@@ -586,6 +597,131 @@ export default function UsersPage() {
     };
   }, [locationDialogOpen]);
 
+  // Message dialog state
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+
+  const openMessageDialog = () => {
+    setMessageDialogOpen(true);
+  };
+
+  // Update fetchUsers to refresh after sending messages
+  const refreshAfterMessageSent = () => {
+    fetchUsers(false);
+  };
+
+  // Initialize Google Places Autocomplete for the location search
+  const initializeLocationSearchAutocomplete = () => {
+    if (!locationSearchInputRef.current) return;
+    
+    const checkAndInitAutocomplete = () => {
+      // First check if Google Maps is already available
+      if ((window as any).google && (window as any).google.maps && (window as any).google.maps.places) {
+        // Clear any existing autocomplete
+        if (locationSearchInputRef.current) {
+          (window as any).google.maps.event.clearInstanceListeners(locationSearchInputRef.current);
+        }
+        
+        // Create new autocomplete instance
+        locationAutocompleteRef.current = new (window as any).google.maps.places.Autocomplete(locationSearchInputRef.current, {
+          types: ['geocode', 'establishment']
+        });
+        
+        // Add place_changed event listener
+        locationAutocompleteRef.current.addListener('place_changed', () => {
+          const place = locationAutocompleteRef.current.getPlace();
+          if (place && place.formatted_address) {
+            setLocationSearchQuery(place.formatted_address);
+          }
+        });
+        
+        return true;
+      }
+      return false;
+    };
+    
+    // Try to initialize immediately
+    if (checkAndInitAutocomplete()) return;
+    
+    // If Google Maps isn't available yet, wait for it
+    if ((window as any).waitForGoogleMaps) {
+      (window as any).waitForGoogleMaps(checkAndInitAutocomplete);
+    } else {
+      // If waitForGoogleMaps isn't available, try loading the script directly
+      if (!(window as any).googleMapsLoading) {
+        (window as any).googleMapsLoading = true;
+        
+        // Create callback
+        (window as any).initGoogleMapsCallback = () => {
+          checkAndInitAutocomplete();
+          (window as any).googleMapsLoading = false;
+        };
+        
+        // Load script
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places&callback=initGoogleMapsCallback`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+    }
+  };
+
+  // Search users by location
+  const searchUsersByLocation = async () => {
+    if (!locationSearchQuery.trim()) {
+      toast.error('Please enter a location');
+      return;
+    }
+
+    setIsSearchingByLocation(true);
+    
+    try {
+      const response = await api.get('/users/search/location', {
+        params: {
+          location: locationSearchQuery,
+          radius: 200 // Default to 200m
+        }
+      });
+      
+      setLocationSearchResults(response.data.users);
+      setFilteredUsers(response.data.users);
+      setSearchedLocation(response.data.searchLocation);
+      setLocationSearchOpen(false);
+      
+      // Show toast with result count
+      toast.success(`Found ${response.data.total} user(s) within 200m of ${response.data.searchLocation}`);
+    } catch (err: any) {
+      console.error('Error searching users by location:', err);
+      toast.error(err.response?.data?.message || 'Failed to search users by location');
+    } finally {
+      setIsSearchingByLocation(false);
+    }
+  };
+
+  // Clear location search
+  const clearLocationSearch = () => {
+    setLocationSearchResults([]);
+    setSearchedLocation('');
+    setFilteredUsers(users);
+    
+    // Only clear search query if it's a location search
+    if (locationSearchResults.length > 0) {
+      setSearchQuery('');
+    }
+  };
+
+  // Add useEffect for location search input initialization
+  useEffect(() => {
+    if (locationSearchOpen) {
+      setTimeout(() => {
+        if (locationSearchInputRef.current) {
+          locationSearchInputRef.current.focus();
+          initializeLocationSearchAutocomplete();
+        }
+      }, 100);
+    }
+  }, [locationSearchOpen]);
+
   return (
     <div className="space-y-6">
       {/* Add global styles for Google Places */}
@@ -599,7 +735,7 @@ export default function UsersPage() {
           <h2 className="text-2xl font-bold">Users</h2>
           <p className="text-muted-foreground">Manage user accounts and assignments</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -608,6 +744,8 @@ export default function UsersPage() {
           >
             <RefreshCcw className="h-4 w-4" />
           </Button>
+          
+          {/* Emergency button */}
           {emergencyUsers.length > 0 && (
             <Button 
               variant="destructive" 
@@ -622,15 +760,54 @@ export default function UsersPage() {
               <Bell className="h-4 w-4" />
             </Button>
           )}
-          <Link href="/users/create">
-            <Button>
-              <UserPlus className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
-          </Link>
+          
+          {/* Add Location Search Button */}
+          <Button 
+            variant="outline"
+            onClick={() => setLocationSearchOpen(true)}
+            className="group"
+            title="Search by location"
+          >
+            <MapPin className="h-4 w-4 mr-2 text-muted-foreground group-hover:text-foreground" />
+            <span>Search by Location</span>
+          </Button>
+          
+          <Button onClick={openMessageDialog} variant="outline">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            <span>Message</span>
+          </Button>
+          
+          <Button asChild>
+            <Link href="/users/create">
+              <UserPlus className="h-4 w-4 mr-2" />
+              <span>Add User</span>
+            </Link>
+          </Button>
         </div>
       </div>
       
+      {/* Add Location Search Results Banner - only shown when there are results */}
+      {searchedLocation && (
+        <div className="bg-muted/60 py-2 px-4 rounded-md flex items-center justify-between">
+          <div className="flex items-center">
+            <MapPin className="h-4 w-4 mr-2 text-primary" />
+            <span className="text-sm">
+              Showing users within 200m of <strong>{searchedLocation}</strong>
+              {locationSearchResults.length > 0 && ` (${locationSearchResults.length} found)`}
+            </span>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={clearLocationSearch}
+            className="h-8 bg-primary text-white"
+          >
+            <X className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        </div>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -982,6 +1159,46 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Location Search Dialog */}
+      <Dialog open={locationSearchOpen} onOpenChange={setLocationSearchOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Search Users by Location</DialogTitle>
+            <DialogDescription>
+              Find users within 200 meters of a specific location
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="location-search">Location</Label>
+              <Input
+                id="location-search"
+                placeholder="Enter a location to search..."
+                value={locationSearchQuery}
+                onChange={(e) => setLocationSearchQuery(e.target.value)}
+                ref={locationSearchInputRef}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLocationSearchOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={searchUsersByLocation} disabled={isSearchingByLocation || !locationSearchQuery.trim()}>
+              {isSearchingByLocation ? 'Searching...' : 'Search'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Replace the old message dialog with the new reusable component */}
+      <MessageDialog
+        open={messageDialogOpen}
+        onOpenChange={setMessageDialogOpen}
+        users={users}
+        onMessageSent={refreshAfterMessageSent}
+      />
     </div>
   );
 } 

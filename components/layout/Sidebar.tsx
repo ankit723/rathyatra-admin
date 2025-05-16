@@ -10,7 +10,8 @@ import {
   Shield, 
   LayoutDashboard,
   Menu,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/lib/useAuth';
@@ -59,6 +60,11 @@ const sidebarItems: SidebarItem[] = [
         icon: <Shield className="h-4 w-4" />,
       },
     ],
+  },
+  {
+    title: 'Messages',
+    href: '/messages',
+    icon: <MessageSquare className="h-5 w-5" />,
   },
 ];
 

@@ -1,0 +1,3 @@
+admins can send message to users just by pressing a button in the /users page and a modal will be opening where it will ask the admin to type messagge and below select the users using a checkbox and also a search box where user can be searched and then once the send button is pressed the message alog with some important meta data such as which admin sent and at what it was sent will be apended in the messagge field of all the users selected during sending also on the oposite side a similar data will be stored in the admin as well for record
+
+for this you have to go through both the admin and apiserver folder 

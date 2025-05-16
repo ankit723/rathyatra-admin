@@ -43,6 +43,24 @@ export const isTokenExpired = (): boolean => {
   return Date.now() >= tokenExpiryTime;
 };
 
+// Validate that admin still exists in the database
+export const validateAdmin = async (): Promise<boolean> => {
+  try {
+    if (!isAuthenticated()) {
+      return false;
+    }
+    
+    // Call the server to check if admin account is still valid
+    const response = await api.get('/admin/validate-token');
+    return true;
+  } catch (error) {
+    console.error('Admin validation error:', error);
+    // If validation fails, clear tokens and return false
+    clearTokens();
+    return false;
+  }
+};
+
 // Save tokens to localStorage
 const saveTokens = (accessToken: string, refreshToken: string) => {
   if (typeof window !== 'undefined') {

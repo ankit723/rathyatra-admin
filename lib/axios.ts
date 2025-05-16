@@ -58,6 +58,23 @@ const refreshAccessToken = async (): Promise<string | null> => {
   }
 };
 
+// Function to check if admin still exists
+const validateAdminAccount = async (): Promise<boolean> => {
+  try {
+    const response = await axios.get(
+      `${axiosConfig.baseURL}/admin/validate-token`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      }
+    );
+    return response.status === 200;
+  } catch (error) {
+    return false;
+  }
+};
+
 // Add a request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -104,6 +121,26 @@ axiosInstance.interceptors.response.use(
         
         // If token refresh was successful
         if (newToken) {
+          // Validate that admin account still exists
+          const isAdminValid = await validateAdminAccount();
+          
+          if (!isAdminValid) {
+            // Admin account no longer exists
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('admin_data');
+              
+              // Process queue with error
+              processQueue(new Error('Admin account no longer exists'));
+              isRefreshing = false;
+              
+              // Redirect to login
+              window.location.href = '/login?error=admin_deleted';
+              return Promise.reject(new Error('Admin account no longer exists'));
+            }
+          }
+          
           // Update Authorization header
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${newToken}`;
@@ -121,7 +158,7 @@ axiosInstance.interceptors.response.use(
           isRefreshing = false;
           
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            window.location.href = '/login?error=session_expired';
           }
           
           return Promise.reject(error);
@@ -133,7 +170,7 @@ axiosInstance.interceptors.response.use(
         
         // Redirect to login
         if (typeof window !== 'undefined') {
-          window.location.href = '/login';
+          window.location.href = '/login?error=auth_error';
         }
         
         return Promise.reject(refreshError);

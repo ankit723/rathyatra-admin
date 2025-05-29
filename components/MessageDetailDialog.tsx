@@ -8,8 +8,8 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, UsersRound, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Calendar, User, UsersRound, ChevronLeft, ChevronRight, File } from 'lucide-react';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,6 +23,7 @@ interface Recipient {
 interface Message {
   _id: string;
   content: string;
+  mediaUrls: string[];
   sentTo: Recipient[];
   sentAt: string;
 }
@@ -49,6 +50,8 @@ export default function MessageDetailDialog({
   const recipientsPerPage = 10;
 
   if (!message || !admin) return null;
+
+  console.log("message", message);
   
   // Format date
   const formatDate = (dateString: string): string => {
@@ -122,7 +125,34 @@ export default function MessageDetailDialog({
               </div>
             </ScrollArea>
           </Card>
-          
+
+          {/* Media */}
+          <Card className="p-4 bg-muted/50">
+            <div className="text-sm font-medium mb-2 text-muted-foreground">Media</div>
+            <ScrollArea className="h-[200px] w-full rounded-md">
+              <div className="p-2 text-sm whitespace-pre-wrap flex justify-between flex-wrap gap-2">
+                {message.mediaUrls.map((media: string, index: number) => 
+                  media.includes('pdf') ? (
+                    <div key={index} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted">
+                      <a href={media} target="_blank" rel="noopener noreferrer">
+                        <Image src="/pdf.png" alt="PDF" className="h-40 w-40 text-muted-foreground" width={20} height={20} />
+                      </a>
+                    </div>
+                  ) : (
+                    <div key={index}>
+                      <Image src={media} alt="Media" className="w-40 h-40" width={50} height={50} />
+                    </div>
+                  )
+                )}
+                {message.mediaUrls.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No media found
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </Card>
+
           {/* Recipients list */}
           <div>
             <div className="flex justify-between items-center mb-3">

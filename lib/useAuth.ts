@@ -43,8 +43,8 @@ export function useAuth(): UseAuthReturn {
         const isValid = await validateAdmin();
         
         if (isValid) {
-          const adminData = getAdminData();
-          setAdmin(adminData);
+        const adminData = getAdminData();
+        setAdmin(adminData);
           setIsAuthed(true);
         } else {
           // Admin account no longer exists or token is invalid

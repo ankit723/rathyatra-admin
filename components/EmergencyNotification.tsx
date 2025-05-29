@@ -8,16 +8,8 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertTriangle,
-  Bell,
-  ChevronRight,
-  ChevronLeft,
-  MapPin,
-  Volume2,
-  VolumeX,
-} from 'lucide-react';
 import { toast } from 'sonner';
+import { Bell, ChevronRight, ChevronLeft, VolumeX, AlertTriangle, MapPin } from 'lucide-react';
 
 const EmergencyNotification = () => {
   const { 

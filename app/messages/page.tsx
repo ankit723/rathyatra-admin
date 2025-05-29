@@ -35,29 +35,27 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MessageDialog from '@/components/MessageDialog';
 import MessageDetailDialog from '@/components/MessageDetailDialog';
-import type { Message as DetailedMessage, Admin as DetailedAdmin } from '@/components/MessageDetailDialog';
 
-interface MessageSummary {
+interface Message {
   _id: string;
   content: string;
-  mediaUrls?: string[];
   sentTo: {
     userId: string;
     firstName: string;
     lastName: string;
   }[];
   sentAt: string;
+  mediaUrls: string[];
 }
 
-interface AdminWithMessages {
+interface Admin {
   _id: string;
   email: string;
-  sentMessages: MessageSummary[];
+  sentMessages: Message[];
   createdAt: string;
   updatedAt: string;
 }
@@ -80,8 +78,8 @@ interface User {
 
 export default function MessagesPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [allAdmins, setAllAdmins] = useState<AdminWithMessages[]>([]);
-  const [filteredMessages, setFilteredMessages] = useState<{admin: AdminWithMessages, message: MessageSummary}[]>([]);
+  const [allAdmins, setAllAdmins] = useState<Admin[]>([]);
+  const [filteredMessages, setFilteredMessages] = useState<{admin: Admin, message: Message}[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAdmin, setSelectedAdmin] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -93,14 +91,14 @@ export default function MessagesPage() {
   
   // New state for message detail dialog
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<DetailedMessage | null>(null);
-  const [selectedMessageAdmin, setSelectedMessageAdmin] = useState<DetailedAdmin | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedMessageAdmin, setSelectedMessageAdmin] = useState<Admin | null>(null);
 
   // Function to fetch all admins and their messages
   const fetchAdminsWithMessages = async () => {
     setIsLoading(true);
     try {
-      const response = await api.get<{ admins: AdminWithMessages[] }>('/admins');
+      const response = await api.get<{ admins: Admin[] }>('/admins');
       setAllAdmins(response.data.admins);
       
       // Combine all admin messages into a single array for display
@@ -252,12 +250,9 @@ export default function MessagesPage() {
   };
 
   // New function to handle message row click
-  const handleMessageRowClick = (message: MessageSummary, admin: AdminWithMessages) => {
-    setSelectedMessage({ 
-      ...message, 
-      mediaUrls: message.mediaUrls || []
-    } as DetailedMessage);
-    setSelectedMessageAdmin({ _id: admin._id, email: admin.email });
+  const handleMessageRowClick = (message: Message, admin: Admin) => {
+    setSelectedMessage(message);
+    setSelectedMessageAdmin(admin);
     setDetailDialogOpen(true);
   };
 
@@ -324,29 +319,6 @@ export default function MessagesPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Date filter */}
-            <div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left font-normal"
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {selectedDate ? format(selectedDate, 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
             </div>
 
             {/* Recipient count filter */}
@@ -488,7 +460,7 @@ export default function MessagesPage() {
       <MessageDetailDialog
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
-        message={selectedMessage}
+        message={selectedMessage || null}
         admin={selectedMessageAdmin}
       />
     </div>

@@ -15,6 +15,7 @@ import { Search, Paperclip, X, FileText, ImageIcon, UploadCloud } from 'lucide-r
 import { api } from '@/lib/axios';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
+import Image from 'next/image';
 
 interface User {
   _id: string;
@@ -242,7 +243,7 @@ export default function MessageDialog({
     } finally {
       setIsSendingMessage(false);
     }
-  }, [messageContent, selectedUserIds, onMessageSent, onOpenChange, selectedFiles, usersRef, preSelectedIdsRef]);
+  }, [messageContent, selectedUserIds, onMessageSent, onOpenChange, selectedFiles]);
 
   // Reset on dialog close
   useEffect(() => {
@@ -266,7 +267,7 @@ export default function MessageDialog({
     if (!incomingFiles.length) return;
 
     const currentFileCount = selectedFiles.length;
-    let allowedNewFiles: File[] = [];
+    const allowedNewFiles: File[] = [];
 
     for (const file of incomingFiles) {
       if (allowedNewFiles.length + currentFileCount >= 3) {
@@ -425,14 +426,17 @@ export default function MessageDialog({
                   const file = selectedFiles[index];
                   const isImage = file.type.startsWith('image/');
                   return (
-                    <div key={index} className="relative group border rounded-md p-1.5">
+                    <div key={index} className="relative group border rounded-md p-1.5 w-28 h-28 flex justify-center items-center">
                       {isImage ? (
-                        <img 
-                          src={previewSrcOrName} 
+                        <Image 
+                          src={previewSrcOrName}
                           alt={`Preview ${file.name}`} 
-                          className="h-24 w-full object-cover rounded-md" />
+                          width={100}
+                          height={100}
+                          className="object-contain rounded-md"
+                        />
                       ) : (
-                        <div className="h-24 w-full flex flex-col items-center justify-center bg-gray-100 rounded-md">
+                        <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100 rounded-md">
                           <FileText className="h-10 w-10 text-gray-500" />
                           <p className="text-xs text-gray-600 mt-1 truncate w-full text-center px-1">
                             {file.name}

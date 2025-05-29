@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -247,7 +247,7 @@ export default function UsersPage() {
     };
   }, []);
 
-  const fetchUsers = async (isInitialLoad = false) => {
+  const fetchUsers = useCallback(async (isInitialLoad = false) => {
     if (isInitialLoad) {
       setIsLoading(true);
     } else {
@@ -292,24 +292,22 @@ export default function UsersPage() {
       }
       setIsBackgroundRefreshing(false);
     }
-  };
+  }, [searchQuery, refreshEmergencies]);
 
+  // Fetch users on component mount
   useEffect(() => {
     fetchUsers(true);
-  }, []);
+  }, [fetchUsers]);
 
-  // Add auto refresh interval
+  // Background refresh every 30 seconds
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      // Only refresh if not already loading or background refreshing
-      if (!isLoading && !isBackgroundRefreshing) {
-        fetchUsers(false);
-      }
-    }, 5000); // Refresh every 15 seconds
-    
-    // Clean up interval on component unmount
-    return () => clearInterval(refreshInterval);
-  }, [isLoading, isBackgroundRefreshing]);
+    const intervalId = setInterval(() => {
+      console.log("Background refreshing users...");
+      setIsBackgroundRefreshing(true);
+      fetchUsers().finally(() => setIsBackgroundRefreshing(false));
+    }, 30000);
+    return () => clearInterval(intervalId);
+  }, [fetchUsers]);
 
   // Function to position the pac-container exactly where it needs to be
   const positionPacContainer = () => {
@@ -595,7 +593,7 @@ export default function UsersPage() {
       document.removeEventListener('mousedown', stopPropagation, true);
       document.removeEventListener('pointerdown', stopPropagation, true);
     };
-  }, [locationDialogOpen]);
+  }, [locationDialogOpen, fetchUsers]);
 
   // Message dialog state
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
@@ -720,7 +718,7 @@ export default function UsersPage() {
         }
       }, 100);
     }
-  }, [locationSearchOpen]);
+  }, [locationSearchOpen, fetchUsers]);
 
   return (
     <div className="space-y-6">

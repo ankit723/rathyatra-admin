@@ -203,7 +203,7 @@ const SoundManager = () => {
         window.removeEventListener('touchstart', setInteracted);
       };
     }
-  }, []); // Empty dependency array to keep it consistent between renders
+  }, [isInitialized]);
   
   // No visible UI, this is just for initialization
   return null;

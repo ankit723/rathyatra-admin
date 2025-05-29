@@ -14,13 +14,13 @@ import { format } from 'date-fns';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface Recipient {
+export interface Recipient {
   userId: string;
   firstName: string;
   lastName: string;
 }
 
-interface Message {
+export interface Message {
   _id: string;
   content: string;
   mediaUrls: string[];
@@ -28,7 +28,7 @@ interface Message {
   sentAt: string;
 }
 
-interface Admin {
+export interface Admin {
   _id: string;
   email: string;
 }

@@ -15,6 +15,7 @@ import { Search, Paperclip, X, FileText, ImageIcon, UploadCloud } from 'lucide-r
 import { api } from '@/lib/axios';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface User {
   _id: string;
@@ -50,6 +51,9 @@ export default function MessageDialog({
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+
+  // State for "select all" functionality
+  const [areAllFilteredUsersSelected, setAreAllFilteredUsersSelected] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -100,8 +104,20 @@ export default function MessageDialog({
       if (preSelectedIdsRef.current.length > 0) {
         setSelectedUserIds(preSelectedIdsRef.current);
       }
+      // Note: areAllFilteredUsersSelected will be updated by its own effect
+      // based on the above state changes.
     }
   }, [open]);
+
+  // Effect to update whether all filtered users are selected
+  useEffect(() => {
+    if (filteredUsers.length > 0) {
+      const allCurrentlyFilteredAreSelected = filteredUsers.every(user => selectedUserIds.includes(user._id));
+      setAreAllFilteredUsersSelected(allCurrentlyFilteredAreSelected);
+    } else {
+      setAreAllFilteredUsersSelected(false); // No users to select, so not "all selected"
+    }
+  }, [filteredUsers, selectedUserIds]);
 
   // Toggle user selection
   const toggleUserSelection = useCallback((userId: string) => {
@@ -111,6 +127,21 @@ export default function MessageDialog({
         : [...prev, userId]
     );
   }, []);
+
+  // Handler for "select all/deselect all" filtered users
+  const handleToggleSelectAllFiltered = useCallback((checked: boolean | 'indeterminate') => {
+    // Ensure 'checked' is a boolean. Indeterminate state is not expected for this checkbox.
+    const isChecked = typeof checked === 'boolean' ? checked : false; 
+    const filteredIds = filteredUsers.map(user => user._id);
+    
+    if (isChecked) {
+      // Select all filtered users
+      setSelectedUserIds(prev => Array.from(new Set([...prev, ...filteredIds])));
+    } else {
+      // Deselect all filtered users
+      setSelectedUserIds(prev => prev.filter(id => !filteredIds.includes(id)));
+    }
+  }, [filteredUsers, setSelectedUserIds]);
 
   // Send message
   const sendMessage = useCallback(async () => {
@@ -351,25 +382,46 @@ export default function MessageDialog({
           </div>
           <div className="space-y-2 mt-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="user-search">Select Users</Label>
+              <Label htmlFor="user-filter-input">Filter Users</Label>
               <span className="text-xs text-muted-foreground">
-                {selectedUserIds.length} user(s) selected
+                {selectedUserIds.length} total user(s) selected
               </span>
             </div>
+
+            {/* Search Input */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                id="user-search"
-                placeholder="Search users..."
-                className="pl-10 mb-2"
+                id="user-filter-input" // Changed ID for clarity and uniqueness
+                placeholder="Search by name, rank, or phone..." // More descriptive placeholder
+                className="pl-10" // Removed mb-2 as spacing is handled by the next div
                 value={userSearchQuery}
                 onChange={(e) => handleUserSearch(e.target.value)}
               />
             </div>
+
+            {/* "Select All" Checkbox for filtered users */}
+            <div className="flex items-center space-x-2 mt-2 mb-1">
+              <Checkbox
+                id="select-all-filtered-users"
+                checked={areAllFilteredUsersSelected}
+                onCheckedChange={handleToggleSelectAllFiltered}
+                disabled={filteredUsers.length === 0}
+              />
+              <Label htmlFor="select-all-filtered-users" className="cursor-pointer text-sm font-normal text-muted-foreground">
+                {filteredUsers.length === 0
+                  ? 'No users visible to select/deselect'
+                  : areAllFilteredUsersSelected
+                    ? `Deselect all ${filteredUsers.length} visible users`
+                    : `Select all ${filteredUsers.length} visible users`}
+              </Label>
+            </div>
+            
+            {/* User List */}
             <div className="max-h-[200px] overflow-y-auto border rounded-md p-1">
               {filteredUsers.length === 0 ? (
                 <div className="py-6 text-center text-muted-foreground">
-                  No users found
+                  No users found matching your filter
                 </div>
               ) : (
                 filteredUsers.map((user) => (
